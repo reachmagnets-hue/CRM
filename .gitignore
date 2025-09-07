@@ -25,7 +25,6 @@ myenv/
 monorepo/backend/.env
 
 # Local data & artifacts
-data/
 monorepo/backend/chroma/
 monorepo/backend/data/audio/
 monorepo/backend/data/docs/
