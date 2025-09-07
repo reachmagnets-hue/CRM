@@ -1,0 +1,13 @@
+.rm-bc-chat { border: 1px solid #ddd; padding: 8px; border-radius: 8px; }
+.rm-bc-chat-window { height: 280px; overflow-y: auto; background: #fafafa; padding: 8px; margin-bottom: 8px; }
+.rm-bc-chat-input { display: flex; gap: 8px; }
+.rm-bc-chat-input textarea { flex: 1; min-height: 44px; }
+.rm-bc-chat-input button { padding: 8px 12px; }
+.rm-bc-msg { padding: 6px 8px; margin: 4px 0; border-radius: 6px; white-space: pre-wrap; }
+.rm-bc-msg-user { background: #e6f2ff; align-self: flex-end; }
+.rm-bc-msg-assistant { background: #f2f2f2; }
+.rm-bc-search form { display: flex; gap: 8px; margin-bottom: 8px; }
+.rm-bc-search-results { border: 1px solid #eee; padding: 8px; min-height: 40px; }
+.rm-bc-search-item { border-bottom: 1px dashed #ddd; padding: 6px 0; }
+.rm-bc-search-title { font-weight: 600; }
+.rm-bc-search-snippet { color: #444; }
