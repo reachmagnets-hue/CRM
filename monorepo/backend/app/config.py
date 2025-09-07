@@ -41,6 +41,7 @@ class Settings:
     tenant_origins: Dict[str, List[str]]
     twilio_voice_webhook_base: str | None
     booking_pages: Dict[str, List[str]]
+    twilio_number_map: Dict[str, List[str]]
 
 
 def get_settings() -> Settings:
@@ -65,6 +66,8 @@ def get_settings() -> Settings:
         tenant_origins=_parse_map(os.getenv("TENANT_ORIGINS", "")),
         twilio_voice_webhook_base=os.getenv("TWILIO_VOICE_WEBHOOK_BASE", "") or None,
         booking_pages=_parse_map(os.getenv("BOOKING_PAGES", "")),
+    # Map tenant_id -> list of Twilio numbers (e.g. "+15551234567,+15557654321")
+    twilio_number_map=_parse_map(os.getenv("TWILIO_NUMBER_MAP", "")),
     )
 
 

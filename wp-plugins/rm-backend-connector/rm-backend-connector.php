@@ -141,4 +141,27 @@ add_action('init', function () {
         <?php
         return ob_get_clean();
     });
+
+    // Booking shortcode: pulls booking_url from /api/v1/tenants/info
+    add_shortcode('rm_booking', function ($atts) {
+        rm_bc_enqueue_style_once();
+        $api_base = esc_url_raw(get_option(RM_BC_OPTION_API_BASE, ''));
+        $public_key = sanitize_text_field(get_option(RM_BC_OPTION_PUBLIC_KEY, ''));
+        $tenant_id = sanitize_text_field(get_option(RM_BC_OPTION_TENANT_ID, ''));
+
+        wp_enqueue_script('rm-bc-booking', plugins_url('assets/js/booking.js', __FILE__), [], RM_BC_VERSION, true);
+        wp_add_inline_script('rm-bc-booking', 'window.RMBC_Booking_Config = ' . wp_json_encode([
+            'apiBase' => $api_base,
+            'publicKey' => $public_key,
+            'tenantId' => $tenant_id,
+        ]) . ';', 'before');
+
+        ob_start();
+        ?>
+        <div class="rm-bc-booking">
+            <button type="button" class="rm-bc-booking-btn">Book Appointment</button>
+        </div>
+        <?php
+        return ob_get_clean();
+    });
 });
