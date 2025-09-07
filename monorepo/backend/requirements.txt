@@ -1,0 +1,16 @@
+fastapi
+uvicorn[standard]
+httpx
+python-multipart
+python-dotenv
+orjson
+pydantic>=2
+aiofiles
+pdfminer.six
+chromadb
+pyjwt
+slowapi
+pytest
+twilio
+python-docx
+requests

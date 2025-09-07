@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pytest_cache/
+.mypy_cache/
+.pytype/
+.coverage*
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+myenv/
+
+# Editors/OS
+.vscode/
+.idea/
+.DS_Store
+*.swp
+
+# Env files
+.env
+monorepo/backend/.env
+
+# Local data & artifacts
+monorepo/backend/chroma/
+monorepo/backend/data/audio/
+monorepo/backend/data/docs/
+
+# Node
+node_modules/
+monorepo/wp-plugins/**/node_modules/
