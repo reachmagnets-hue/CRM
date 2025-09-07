@@ -17,8 +17,6 @@ services:
     ports:
       - "8080:80"
     volumes:
-      - ./nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - ./nginx.conf.template:/etc/nginx/conf.d/default.conf:ro
       - ./../backend/data/audio:/var/www/audio:ro
-    environment:
-      - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
-    command: ["/bin/sh", "-c", "envsubst < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;' "]
+    command: ["nginx", "-g", "daemon off;"]

@@ -20,13 +20,15 @@ def require_admin_key(x_admin_key: str | None = Header(default=None)) -> None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid admin key")
 
 
-def resolve_tenant(request: Request, x_tenant_id: str | None = Header(default=None)) -> str:
+def resolve_tenant(request: Request, x_tenant_id: str | None = None) -> str:
     """Resolve tenant by header, body field (set upstream), or Host header mapping.
-    Body field is attached by router if present.
+    Safe for direct calls from route handlers.
     """
-    # 1. Explicit header
+    # 1. Explicit header (prefer passed arg; else read from request headers)
+    if not x_tenant_id:
+        x_tenant_id = request.headers.get("x-tenant-id")
     if x_tenant_id:
-        return x_tenant_id
+        return str(x_tenant_id)
     # 2. Request state/body (set by routes)
     tenant_from_body = getattr(request.state, "tenant_id", None)
     if tenant_from_body:
