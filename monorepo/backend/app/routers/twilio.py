@@ -8,6 +8,7 @@ from ..services.llm import stream_generate
 from ..services.stt import transcribe_from_twilio_payload
 from ..services.tts import synthesize_to_file
 from ..config import SETTINGS
+from ..services.db import open_session, CallLog
 
 
 router = APIRouter(tags=["twilio"])
@@ -51,6 +52,23 @@ async def twilio_handle(request: Request, SpeechResult: str = Form(default="")) 
     if len("".join(text_resp)) > 500:
       break
   final_text = "".join(text_resp).strip() or "Sorry, I had trouble answering."
+  # Determine simple intent
+  default_intent = None
+  for number, labels in SETTINGS.twilio_service_map.items():
+    if from_number == number and labels:
+      default_intent = labels[0]
+      break
+  intent = default_intent
+  qlow = (query or "").lower()
+  if "book" in qlow or "appointment" in qlow:
+    intent = intent or "book_appointment"
+  # Log best-effort
+  try:
+    with open_session() as session:
+      session.add(CallLog(site_id=tenant_id, from_number=from_number, customer_id=None, transcript=f"Q: {query}\nA: {final_text}", service_intent=intent, outcome="completed"))
+      session.commit()
+  except Exception:
+    pass
   audio_path = synthesize_to_file(final_text)
   # Build absolute URL when TWILIO_VOICE_WEBHOOK_BASE is set
   base = (SETTINGS.twilio_voice_webhook_base or "").rstrip("/")

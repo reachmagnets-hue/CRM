@@ -14,3 +14,6 @@ pytest
 twilio
 python-docx
 requests
+SQLAlchemy>=2.0
+PyMySQL>=1.1
+cryptography

@@ -4,17 +4,18 @@ import os
 import shutil
 import uuid
 from pathlib import Path
-from typing import Tuple
+from typing import Tuple, Optional
 
 from fastapi import UploadFile
 
 from ..config import SETTINGS
 
 
-def save_upload(tenant_id: str, file: UploadFile) -> Tuple[str, Path]:
+def save_upload(tenant_id: str, file: UploadFile, customer_id: Optional[str] = None) -> Tuple[str, Path]:
     ext = Path(file.filename or "").suffix.lower()
     doc_id = str(uuid.uuid4())
-    tenant_dir = Path(SETTINGS.data_dir) / "docs" / tenant_id
+    base_dir = Path(SETTINGS.data_dir) / "docs" / tenant_id
+    tenant_dir = base_dir / customer_id if customer_id else base_dir
     tenant_dir.mkdir(parents=True, exist_ok=True)
     dest = tenant_dir / f"{doc_id}{ext}"
     with dest.open("wb") as out:

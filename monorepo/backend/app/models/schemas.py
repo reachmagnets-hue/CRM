@@ -31,6 +31,7 @@ class ChatRequest(BaseModel):
     history: List[ChatMessage] = Field(default_factory=list)
     top_k: int = 5
     tenant: Optional[str] = None
+    customer_id: Optional[str] = None
 
 
 class IngestResponse(BaseModel):

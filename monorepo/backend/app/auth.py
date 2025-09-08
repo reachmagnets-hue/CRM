@@ -43,3 +43,20 @@ def resolve_tenant(request: Request, x_tenant_id: str | None = None) -> str:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unknown tenant host")
     # Fallback single-tenant dev
     return "default"
+
+
+def require_site_auth(
+    request: Request,
+    site_id: str | None = Header(default=None, alias="X-Site-Id"),
+    api_key: str | None = Header(default=None, alias="X-Api-Key"),
+):
+    # Allow dev fallback if not configured
+    if not SETTINGS.site_api_keys:
+        return
+    if not site_id or not api_key:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing site_id/api_key")
+    valid = SETTINGS.site_api_keys.get(site_id, [])
+    if api_key not in valid:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid api_key for site_id")
+    # bridge: attach site_id to request.state for downstream tenant resolution
+    request.state.tenant_id = site_id

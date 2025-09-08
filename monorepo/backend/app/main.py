@@ -10,7 +10,7 @@ from starlette.staticfiles import StaticFiles
 
 from .config import SETTINGS
 from .log import setup_logging
-from .routers import chat, health, ingest, search, tenants, twilio
+from .routers import chat, health, ingest, search, tenants, twilio, appointments, admin, ads, uploads, sites
 
 
 def _collect_cors_origins() -> List[str]:
@@ -49,6 +49,11 @@ app.include_router(ingest.router, prefix="/api/v1")
 app.include_router(search.router, prefix="/api/v1")
 app.include_router(chat.router, prefix="/api/v1")
 app.include_router(twilio.router, prefix="/api/v1")
+app.include_router(appointments.router, prefix="/api/v1")
+app.include_router(admin.router, prefix="/api/v1")
+app.include_router(ads.router, prefix="/api/v1")
+app.include_router(uploads.router, prefix="/api/v1")
+app.include_router(sites.router, prefix="/api/v1")
 
 
 @app.get("/")

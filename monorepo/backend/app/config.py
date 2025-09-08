@@ -42,6 +42,11 @@ class Settings:
     twilio_voice_webhook_base: str | None
     booking_pages: Dict[str, List[str]]
     twilio_number_map: Dict[str, List[str]]
+    tenant_sql_dsn: Dict[str, List[str]]  # map tenant -> [DSN]
+    default_sql_dsn: str | None
+    site_api_keys: Dict[str, List[str]]  # map site_id -> [api_key]
+    crypto_secret: str | None
+    twilio_service_map: Dict[str, List[str]]  # phone_number -> [service_labels]
 
 
 def get_settings() -> Settings:
@@ -68,6 +73,11 @@ def get_settings() -> Settings:
         booking_pages=_parse_map(os.getenv("BOOKING_PAGES", "")),
     # Map tenant_id -> list of Twilio numbers (e.g. "+15551234567,+15557654321")
     twilio_number_map=_parse_map(os.getenv("TWILIO_NUMBER_MAP", "")),
+    tenant_sql_dsn=_parse_map(os.getenv("TENANT_SQL_DSN", "")),
+    default_sql_dsn=os.getenv("DEFAULT_SQL_DSN", "") or None,
+    site_api_keys=_parse_map(os.getenv("SITE_API_KEYS", "")),
+    crypto_secret=os.getenv("CRYPTO_SECRET", "") or None,
+    twilio_service_map=_parse_map(os.getenv("TWILIO_SERVICE_MAP", "")),
     )
 
 
