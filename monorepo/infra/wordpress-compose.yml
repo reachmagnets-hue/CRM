@@ -1,0 +1,53 @@
+version: '3.8'
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wp
+      MYSQL_PASSWORD: wp
+      MYSQL_ROOT_PASSWORD: rootpw
+    volumes:
+      - wpdb-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  backend:
+    image: rag-backend:latest
+    environment:
+      ADMIN_API_KEY: admin_CHANGE_ME
+      SITE_API_KEYS: site_demo:demo_key
+      DATA_DIR: /app/data
+      CHROMA_DIR: /app/chroma
+    volumes:
+      - /opt/rag-data:/app/data
+      - /opt/rag-chroma:/app/chroma
+    restart: unless-stopped
+
+  wordpress:
+    image: wordpress:php8.2-apache
+    depends_on:
+      db:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: wp
+      WORDPRESS_DB_PASSWORD: wp
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DEBUG: '0'
+      WORDPRESS_CONFIG_EXTRA: |
+        define('FS_METHOD', 'direct');
+    ports:
+      - "8081:80"
+    volumes:
+      - ../../wp-plugins/mb-connector:/var/www/html/wp-content/plugins/mb-connector:ro
+    restart: unless-stopped
+
+volumes:
+  wpdb-data:
