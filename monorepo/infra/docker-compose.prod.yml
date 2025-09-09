@@ -1,0 +1,20 @@
+version: '3.8'
+services:
+  backend:
+    image: ${IMAGE:-ghcr.io/reachmagnets-hue/crm-backend:latest}
+    env_file:
+      - ./.env
+    volumes:
+      - /opt/rag-data:/app/data
+      - /opt/rag-chroma:/app/chroma
+    restart: unless-stopped
+  nginx:
+    image: nginx:alpine
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf.template:/etc/nginx/conf.d/default.conf:ro
+      - /opt/rag-data/audio:/var/www/audio:ro
+    restart: unless-stopped
