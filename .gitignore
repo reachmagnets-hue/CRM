@@ -3,7 +3,7 @@ __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
-*.pytest_cache/
+.pytest_cache/
 .mypy_cache/
 .pytype/
 .coverage*
@@ -28,6 +28,7 @@ monorepo/backend/.env
 monorepo/backend/chroma/
 monorepo/backend/data/audio/
 monorepo/backend/data/docs/
+monorepo/backend/data/tenants/*
 
 # Node
 node_modules/
