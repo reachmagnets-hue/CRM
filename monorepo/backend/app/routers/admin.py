@@ -1,10 +1,12 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Request
-from fastapi.responses import HTMLResponse
+from fastapi import APIRouter, Depends, Request, HTTPException
+from fastapi.responses import HTMLResponse, FileResponse
+from pathlib import Path
 
 from ..auth import require_admin_key, require_site_auth, resolve_tenant
 from ..services.db import open_session, ChatLog, CallLog, Upload, Appointment
+from ..config import SETTINGS
 
 router = APIRouter(tags=["admin"], dependencies=[Depends(require_admin_key), Depends(require_site_auth)])
 
@@ -109,6 +111,27 @@ async def admin_appointments(request: Request, limit: int = 100, offset: int = 0
             for r in rows
         ]
     }
+
+
+@router.get("/admin/download/{upload_id}")
+async def admin_download(request: Request, upload_id: int):
+    site_id = resolve_tenant(request)
+    with open_session() as session:
+        row = session.query(Upload).filter(Upload.site_id == site_id, Upload.id == upload_id).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="Upload not found")
+    # Files are stored under DATA_DIR/docs/<site_id>[/<customer_id>]/<doc_id>.<ext>
+    # We only stored filename and metadata_json with doc_id, so locate by filename within site tree.
+    base = Path(SETTINGS.data_dir) / "docs" / site_id
+    candidate = base / row.filename
+    if not candidate.exists():
+        # Try search once under subfolders
+        for p in base.rglob(row.filename):
+            candidate = p
+            break
+    if not candidate.exists():
+        raise HTTPException(status_code=404, detail="File not found on disk")
+    return FileResponse(candidate, filename=row.filename)
 
 
 @router.get("/admin/view", response_class=HTMLResponse)

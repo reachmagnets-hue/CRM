@@ -32,5 +32,17 @@ See `.env.example`. Important:
 
 ## Dev
 
-cp .env.example .env
-uvicorn app.main:app --reload
+1) Create env and install deps
+  python3 -m venv .venv
+  source .venv/bin/activate
+  pip install -r requirements.txt
+
+2) Env
+  cp .env.example .env
+
+3) Run
+  uvicorn app.main:app --reload
+
+VS Code tips
+- Open the folder root; select interpreter: .venv/bin/python
+- Pylance extraPaths includes monorepo/backend via .vscode/settings.json

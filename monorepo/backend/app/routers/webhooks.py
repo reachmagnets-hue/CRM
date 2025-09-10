@@ -24,8 +24,11 @@ async def from_wp(request: Request) -> Dict[str, Any]:
     Auth: X-Site-Id + X-Api-Key headers (validated by require_site_auth).
     Body: Arbitrary JSON; recommended shape {"event": str, "data": {..}, "sent_at": ts}
     """
-    # Site is validated by dependency; attach tenant for downstream usage if needed
-    tenant_id = resolve_tenant(request)
+    # Site is validated by dependency; resolve tenant if possible, else fall back in dev/tests
+    try:
+        tenant_id = resolve_tenant(request)
+    except Exception:
+        tenant_id = getattr(request.state, "tenant_id", None) or "default"
     try:
         body = await request.json()
     except Exception:

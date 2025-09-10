@@ -4,13 +4,15 @@ import os
 from pathlib import Path
 from typing import List
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.staticfiles import StaticFiles
 
 from .config import SETTINGS
 from .log import setup_logging
-from .routers import chat, health, ingest, search, tenants, twilio, appointments, admin, ads, uploads, sites, webhooks
+from .routers import chat, health, ingest, search, tenants, twilio, appointments, admin, ads, uploads, sites, webhooks, demo
+from .auth import resolve_tenant
+from .utils.tenant_ctx import set_current_tenant
 
 
 def _collect_cors_origins() -> List[str]:
@@ -42,6 +44,18 @@ DATA_DIR = Path(SETTINGS.data_dir)
 # Serve TTS audio files in dev (prod should be via nginx)
 app.mount("/static/audio", StaticFiles(directory=str(DATA_DIR / "audio")), name="audio")
 
+# Tenant context middleware (per-request)
+@app.middleware("http")
+async def tenant_context_middleware(request: Request, call_next):
+    try:
+        tenant_id = resolve_tenant(request)
+    except Exception:
+        tenant_id = None
+    set_current_tenant(tenant_id)
+    response = await call_next(request)
+    # Optional: reset or leave as is; ContextVar is per-task
+    return response
+
 # Routers
 app.include_router(health.router)
 app.include_router(tenants.router, prefix="/api/v1")
@@ -55,6 +69,7 @@ app.include_router(ads.router, prefix="/api/v1")
 app.include_router(uploads.router, prefix="/api/v1")
 app.include_router(sites.router, prefix="/api/v1")
 app.include_router(webhooks.router, prefix="/api/v1")
+app.include_router(demo.router)
 
 
 @app.get("/")

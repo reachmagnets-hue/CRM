@@ -7,11 +7,18 @@ services:
     volumes:
       - /opt/rag-data:/app/data
       - /opt/rag-chroma:/app/chroma
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8000/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
     restart: unless-stopped
   nginx:
     image: nginx:alpine
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     ports:
       - "80:80"
     volumes:

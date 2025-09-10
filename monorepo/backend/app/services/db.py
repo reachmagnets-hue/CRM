@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Any
 
 from sqlalchemy import String, Text, DateTime, create_engine, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, Session
 
 from ..config import SETTINGS
+from ..utils.tenant_ctx import get_current_tenant
 from pathlib import Path
 
 
@@ -84,22 +85,32 @@ class SiteCredential(Base):
     __table_args__ = (UniqueConstraint("site_id", "platform", name="uq_site_platform"),)
 
 
-_engine = None
+_engines: dict[str, Any] = {}
 
 
 def _get_engine():
-    global _engine
-    if _engine is not None:
-        return _engine
-    dsn = SETTINGS.default_sql_dsn
+    tenant = get_current_tenant() or "default"
+    if tenant in _engines:
+        return _engines[tenant]
+
+    # Priority: tenant-specific DSN -> default DSN -> sqlite fallback
+    dsn = None
+    # TENANT_SQL_DSN is a mapping tenant -> [DSN]
+    tmap = SETTINGS.tenant_sql_dsn.get(tenant) if SETTINGS.tenant_sql_dsn else None
+    if tmap and len(tmap) > 0:
+        dsn = tmap[0]
     if not dsn:
-        # Dev fallback to SQLite in DATA_DIR when MySQL DSN is not yet configured
-        db_path = Path(SETTINGS.data_dir) / "central.db"
+        dsn = SETTINGS.default_sql_dsn
+    if not dsn:
+        db_name = f"{tenant}.db" if tenant and tenant != "default" else "central.db"
+        db_path = Path(SETTINGS.data_dir) / db_name
         db_path.parent.mkdir(parents=True, exist_ok=True)
         dsn = f"sqlite:///{db_path}"
-    _engine = create_engine(dsn, pool_pre_ping=True)
-    Base.metadata.create_all(_engine)
-    return _engine
+
+    engine = create_engine(dsn, pool_pre_ping=True)
+    Base.metadata.create_all(engine)
+    _engines[tenant] = engine
+    return engine
 
 
 def open_session() -> Session:

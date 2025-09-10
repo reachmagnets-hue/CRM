@@ -34,6 +34,8 @@ jobs:
           tags: |
             type=raw,value=latest
             type=sha
+            type=ref,event=tag
+            type=raw,value={{date 'YYYYMMDD-HHmm'}}
 
       - name: Build and push
         uses: docker/build-push-action@v6
@@ -41,6 +43,8 @@ jobs:
           context: monorepo/backend
           file: monorepo/backend/Dockerfile
           push: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
