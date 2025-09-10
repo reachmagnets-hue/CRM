@@ -139,8 +139,11 @@ jobs:
           script: |
             set -euo pipefail
             cd "$APP_PATH"
-            docker compose -f docker-compose.prod.yml pull
-            IMAGE=$IMAGE docker compose -f docker-compose.prod.yml up -d
+            if docker compose version >/dev/null 2>&1; then DC="docker compose"; \
+            elif command -v docker-compose >/dev/null 2>&1; then DC="docker-compose"; \
+            else echo "docker compose not installed" >&2; exit 1; fi
+            $DC -f docker-compose.prod.yml pull
+            IMAGE=$IMAGE $DC -f docker-compose.prod.yml up -d
 
       - name: Smoke test health endpoint
         uses: appleboy/ssh-action@v1.2.0
@@ -161,5 +164,9 @@ jobs:
               echo "Waiting for service... ($i)"; sleep 3;
             done
             echo "Health check failed, showing recent backend logs" >&2
-            cd "$APP_PATH" && docker compose -f docker-compose.prod.yml logs --no-color --tail=200 backend || true
+            cd "$APP_PATH"
+            if docker compose version >/dev/null 2>&1; then DC="docker compose"; \
+            elif command -v docker-compose >/dev/null 2>&1; then DC="docker-compose"; \
+            else DC="echo 'no docker compose'"; fi
+            $DC -f docker-compose.prod.yml logs --no-color --tail=200 backend || true
             exit 1
