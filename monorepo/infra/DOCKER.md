@@ -28,6 +28,8 @@ docker compose up -d --build
 
 - Nginx exposes :80 and proxies `/api/` to backend, serves `/static/audio/`.
 
+For VPS/Hostinger deployment with prebuilt images and GitHub Actions, see `HOSTINGER.md`.
+
 ## Important env keys
 
 - API_PUBLIC_KEYS, ADMIN_API_KEY
