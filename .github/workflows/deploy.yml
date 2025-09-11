@@ -127,8 +127,9 @@ jobs:
           script_stop: true
           script: |
             set -euo pipefail
-            sudo mkdir -p /opt/rag-data /opt/rag-chroma
-            sudo chown -R $(whoami):$(whoami) /opt/rag-data /opt/rag-chroma
+            # Create data directories with or without sudo (Hostinger may not allow sudo)
+            mkdir -p /opt/rag-data /opt/rag-chroma || sudo mkdir -p /opt/rag-data /opt/rag-chroma || true
+            chown -R $(whoami):$(whoami) /opt/rag-data /opt/rag-chroma || sudo chown -R $(whoami):$(whoami) /opt/rag-data /opt/rag-chroma || true
             mkdir -p "$APP_PATH"
             if [ -n "${PROD_ENV}" ]; then echo "$PROD_ENV" | base64 -d > "$APP_PATH/.env"; fi
 
