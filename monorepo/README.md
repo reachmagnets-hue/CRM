@@ -14,6 +14,8 @@ This monorepo provides a FastAPI backend that powers multiple WordPress sites wi
 5. Ingest a doc: `make -C backend ingest FILE=path/to/file.txt TENANT=site_a`
 6. Install the WP plugin from `wp-plugins/ollama-chat` on each site and configure Settings.
 
+WordPress integration patterns and code examples: see `docs/WP_INTEGRATION.md`.
+
 ## Multi-tenancy
 
 - Map Host header domains to tenant IDs via `TENANT_DOMAINS` in env.

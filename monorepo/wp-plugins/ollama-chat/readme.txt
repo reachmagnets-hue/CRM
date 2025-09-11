@@ -13,3 +13,5 @@ Floating chat widget that connects to a shared FastAPI backend. Shortcode: [olla
 2. Activate the plugin.
 3. Go to Settings > Ollama Chat and set API Base URL and Public Key.
 4. Add `[ollama_chat tenant="auto"]` to any page.
+
+For broader WordPress integration patterns (server-to-server pull, push/webhooks, reverse proxy), see `monorepo/docs/WP_INTEGRATION.md`.
