@@ -1,3 +1,4 @@
+name: rag
 services:
   backend:
     image: ${IMAGE:-ghcr.io/reachmagnets-hue/crm-backend:latest}
