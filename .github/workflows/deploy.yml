@@ -99,6 +99,22 @@ jobs:
             monorepo/infra/nginx.conf.template
           target: ${{ secrets.VPS_APP_PATH != '' && secrets.VPS_APP_PATH || vars.VPS_APP_PATH }}
 
+      - name: Prepare Hostinger Compose UI folder (optional)
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          APP_PATH: ${{ secrets.VPS_APP_PATH != '' && secrets.VPS_APP_PATH || vars.VPS_APP_PATH }}
+        with:
+          host: ${{ secrets.VPS_HOST != '' && secrets.VPS_HOST || vars.VPS_HOST }}
+          username: ${{ secrets.VPS_USER != '' && secrets.VPS_USER || vars.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY != '' && secrets.VPS_SSH_KEY || vars.VPS_SSH_KEY }}
+          script_stop: false
+          script: |
+            set -euo pipefail
+            mkdir -p "$APP_PATH/auto_body"
+            cp -f "$APP_PATH/docker-compose.prod.yml" "$APP_PATH/auto_body/docker-compose.yml" || true
+            cp -f "$APP_PATH/nginx.conf.template" "$APP_PATH/auto_body/nginx.conf.template" || true
+            if [ -f "$APP_PATH/.env" ]; then cp -f "$APP_PATH/.env" "$APP_PATH/auto_body/.env"; fi
+
       - name: Write prod .env on VPS (if provided)
         uses: appleboy/ssh-action@v1.2.0
         env:
@@ -150,8 +166,11 @@ jobs:
             if docker compose version >/dev/null 2>&1; then DC="docker compose"; \
             elif command -v docker-compose >/dev/null 2>&1; then DC="docker-compose"; \
             else echo "docker compose not installed" >&2; exit 1; fi
+            echo "Pulling image: $IMAGE"
+            docker pull "$IMAGE" || echo "Warning: docker pull failed (may rely on compose)" >&2
             $DC -f docker-compose.prod.yml pull
             IMAGE=$IMAGE $DC -f docker-compose.prod.yml up -d
+            $DC -f docker-compose.prod.yml ps
 
       - name: Smoke test health endpoint
         uses: appleboy/ssh-action@v1.2.0
@@ -171,10 +190,14 @@ jobs:
               fi
               echo "Waiting for service... ($i)"; sleep 3;
             done
-            echo "Health check failed, showing recent backend logs" >&2
+            echo "Health check failed, showing diagnostics" >&2
             cd "$APP_PATH"
             if docker compose version >/dev/null 2>&1; then DC="docker compose"; \
             elif command -v docker-compose >/dev/null 2>&1; then DC="docker-compose"; \
             else DC="echo 'no docker compose'"; fi
             $DC -f docker-compose.prod.yml logs --no-color --tail=200 backend || true
+            $DC -f docker-compose.prod.yml logs --no-color --tail=200 nginx || true
+            $DC -f docker-compose.prod.yml ps || true
+            docker images | grep -i crm-backend || true
+            docker network ls || true
             exit 1
