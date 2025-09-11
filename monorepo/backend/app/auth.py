@@ -20,6 +20,24 @@ def require_admin_key(x_admin_key: str | None = Header(default=None)) -> None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid admin key")
 
 
+def require_bearer_or_public(
+    authorization: str | None = Header(default=None, alias="Authorization"),
+    x_public_key: str | None = Header(default=None, alias="X-Public-Key"),
+):
+    """Accept either Authorization: Bearer <token> or X-Public-Key header.
+    Uses API_PUBLIC_KEYS list from env. If list is empty, allow (dev fallback).
+    """
+    if not SETTINGS.api_public_keys:
+        return
+    token = None
+    if authorization and authorization.lower().startswith("bearer "):
+        token = authorization[7:].strip()
+    if not token and x_public_key:
+        token = x_public_key.strip()
+    if not token or token not in SETTINGS.api_public_keys:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
+
+
 def resolve_tenant(request: Request, x_tenant_id: str | None = None) -> str:
     """Resolve tenant by header, body field (set upstream), or Host header mapping.
     Safe for direct calls from route handlers.
