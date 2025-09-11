@@ -16,6 +16,10 @@ This monorepo provides a FastAPI backend that powers multiple WordPress sites wi
 
 WordPress integration patterns and code examples: see `docs/WP_INTEGRATION.md`.
 
+### Alternative deployment (non-Docker)
+
+If you need a direct systemd + Nginx deployment (no containers), see `infra/NON_DOCKER_DEPLOY.md` and the helper script `infra/vps/provision_non_docker.sh`.
+
 ## Multi-tenancy
 
 - Map Host header domains to tenant IDs via `TENANT_DOMAINS` in env.
