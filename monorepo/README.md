@@ -30,3 +30,10 @@ If you need a direct systemd + Nginx deployment (no containers), see `infra/NON_
 
 - Point your number Voice webhooks to `/api/v1/twilio/voice` and `/api/v1/twilio/handle`.
 - Configure TTS if desired (see `scripts/create_piper_voice.sh`).
+
+## WebRTC (Phase 1)
+
+Minimal signaling endpoints for future in-widget call:
+
+- `/api/v1/rtc/health` – basic readiness
+- `/api/v1/rtc/offer` – accepts an SDP offer and returns an answer

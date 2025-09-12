@@ -10,7 +10,7 @@ from starlette.staticfiles import StaticFiles
 
 from .config import SETTINGS
 from .log import setup_logging
-from .routers import chat, health, ingest, search, tenants, twilio, appointments, admin, ads, uploads, sites, webhooks, demo, crm
+from .routers import chat, health, ingest, search, tenants, twilio, appointments, admin, ads, uploads, sites, webhooks, demo, crm, rtc
 from .auth import resolve_tenant
 from .utils.tenant_ctx import set_current_tenant
 
@@ -71,6 +71,7 @@ app.include_router(sites.router, prefix="/api/v1")
 app.include_router(webhooks.router, prefix="/api/v1")
 app.include_router(demo.router)
 app.include_router(crm.router, prefix="/api")
+app.include_router(rtc.router, prefix="/api/v1")
 
 
 @app.get("/")

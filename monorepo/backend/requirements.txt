@@ -17,3 +17,6 @@ requests
 SQLAlchemy>=2.0
 PyMySQL>=1.1
 cryptography
+aiortc>=1.6.0
+av>=10.0.0
+numpy>=1.26

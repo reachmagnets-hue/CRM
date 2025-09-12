@@ -65,6 +65,13 @@ async def demo_page():
   </div>
 
   <fieldset>
+    <legend>WebRTC (Phase 1) — signaling test</legend>
+    <p>This does a basic offer → answer exchange with the backend. No audio flows yet.</p>
+    <button onclick="rtcConnect()">Connect</button>
+    <pre id="rtcOut"></pre>
+  </fieldset>
+
+  <fieldset>
     <legend>Create Appointment</legend>
     <div class="row">
       <div class="col">
@@ -174,6 +181,39 @@ async def demo_page():
         const data = await resp.json();
         out.textContent = JSON.stringify(data, null, 2);
       } catch (err) { out.textContent = 'Exception: ' + err; }
+    }
+  </script>
+  <script>
+    async function rtcConnect() {
+      const out = document.getElementById('rtcOut');
+      out.textContent = '';
+      try {
+        const pc = new RTCPeerConnection();
+        pc.onconnectionstatechange = () => {
+          out.textContent += `\nstate: ${pc.connectionState}`;
+        };
+        // Optional: request mic to include an audio track in the offer
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          for (const track of stream.getAudioTracks()) pc.addTrack(track, stream);
+        } catch (e) {}
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        const resp = await fetch('/api/v1/rtc/offer', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: offer.type, sdp: offer.sdp })
+        });
+        if (!resp.ok) {
+          out.textContent = `Error: ${resp.status} ${resp.statusText}`;
+          return;
+        }
+        const answer = await resp.json();
+        await pc.setRemoteDescription(answer);
+        out.textContent = 'Offer/Answer completed.';
+      } catch (err) {
+        out.textContent = 'Exception: ' + err;
+      }
     }
   </script>
 </body>
