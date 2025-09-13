@@ -1,0 +1,23 @@
+# env files (keep secrets out of git)
+infra/.env
+infra/.env.*
+!infra/.env.example
+
+# local editor/OS junk
+.DS_Store
+*.swp
+*.swo
+
+# python
+__pycache__/
+*.pyc
+
+# docker & logs
+*.log
+*.pid
+
+# your local backups
+infra/*bak*
+infra/*.bak*
+infra/*.bak.*
+infra/*.yml.bak*
