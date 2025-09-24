@@ -56,6 +56,12 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-and-push
     if: github.ref == 'refs/heads/main'
+    env:
+      VPS_HOST: ${{ secrets.VPS_HOST || vars.VPS_HOST }}
+      VPS_USER: ${{ secrets.VPS_USER || vars.VPS_USER }}
+      VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY || vars.VPS_SSH_KEY }}
+      VPS_APP_PATH: ${{ secrets.VPS_APP_PATH || vars.VPS_APP_PATH }}
+      PROD_ENV: ${{ secrets.PROD_ENV || vars.PROD_ENV }}
     steps:
       - name: Validate required connection values (secrets or variables)
         run: |
@@ -66,72 +72,60 @@ jobs:
               exit 1
             fi
           done
-        env:
-          VPS_HOST: ${{ secrets.VPS_HOST != '' && secrets.VPS_HOST || vars.VPS_HOST }}
-          VPS_USER: ${{ secrets.VPS_USER != '' && secrets.VPS_USER || vars.VPS_USER }}
-          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY != '' && secrets.VPS_SSH_KEY || vars.VPS_SSH_KEY }}
-          VPS_APP_PATH: ${{ secrets.VPS_APP_PATH != '' && secrets.VPS_APP_PATH || vars.VPS_APP_PATH }}
 
       - name: SSH sanity check (connectivity + docker)
         uses: appleboy/ssh-action@v1.2.0
-        env:
-          APP_PATH: ${{ secrets.VPS_APP_PATH != '' && secrets.VPS_APP_PATH || vars.VPS_APP_PATH }}
         with:
-          host: ${{ secrets.VPS_HOST != '' && secrets.VPS_HOST || vars.VPS_HOST }}
-          username: ${{ secrets.VPS_USER != '' && secrets.VPS_USER || vars.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY != '' && secrets.VPS_SSH_KEY || vars.VPS_SSH_KEY }}
+          host: ${{ env.VPS_HOST }}
+          username: ${{ env.VPS_USER }}
+          key: ${{ env.VPS_SSH_KEY }}
           script_stop: true
           script: |
             set -euo pipefail
             echo "Host:" $(hostname)
             docker --version
             docker compose version || docker-compose version || true
-            ls -la "$APP_PATH" || true
+            ls -la "${{ env.VPS_APP_PATH }}" || true
 
       - name: Copy compose and caddy to VPS
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.VPS_HOST != '' && secrets.VPS_HOST || vars.VPS_HOST }}
-          username: ${{ secrets.VPS_USER != '' && secrets.VPS_USER || vars.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY != '' && secrets.VPS_SSH_KEY || vars.VPS_SSH_KEY }}
+          host: ${{ env.VPS_HOST }}
+          username: ${{ env.VPS_USER }}
+          key: ${{ env.VPS_SSH_KEY }}
           source: |
             monorepo/infra/docker-compose.prod.yml
             monorepo/infra/Caddyfile
-          target: ${{ secrets.VPS_APP_PATH != '' && secrets.VPS_APP_PATH || vars.VPS_APP_PATH }}
+          target: ${{ env.VPS_APP_PATH }}
 
       - name: Prepare Hostinger Compose UI folder (optional)
         uses: appleboy/ssh-action@v1.2.0
-        env:
-          APP_PATH: ${{ secrets.VPS_APP_PATH != '' && secrets.VPS_APP_PATH || vars.VPS_APP_PATH }}
         with:
-          host: ${{ secrets.VPS_HOST != '' && secrets.VPS_HOST || vars.VPS_HOST }}
-          username: ${{ secrets.VPS_USER != '' && secrets.VPS_USER || vars.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY != '' && secrets.VPS_SSH_KEY || vars.VPS_SSH_KEY }}
+          host: ${{ env.VPS_HOST }}
+          username: ${{ env.VPS_USER }}
+          key: ${{ env.VPS_SSH_KEY }}
           script_stop: false
           script: |
             set -euo pipefail
-            mkdir -p "$APP_PATH/auto_body"
-            cp -f "$APP_PATH/docker-compose.prod.yml" "$APP_PATH/auto_body/docker-compose.yml" || true
-            cp -f "$APP_PATH/Caddyfile" "$APP_PATH/auto_body/Caddyfile" || true
-            if [ -f "$APP_PATH/.env" ]; then cp -f "$APP_PATH/.env" "$APP_PATH/auto_body/.env"; fi
+            mkdir -p "${{ env.VPS_APP_PATH }}/auto_body"
+            cp -f "${{ env.VPS_APP_PATH }}/docker-compose.prod.yml" "${{ env.VPS_APP_PATH }}/auto_body/docker-compose.yml" || true
+            cp -f "${{ env.VPS_APP_PATH }}/Caddyfile" "${{ env.VPS_APP_PATH }}/auto_body/Caddyfile" || true
+            if [ -f "${{ env.VPS_APP_PATH }}/.env" ]; then cp -f "${{ env.VPS_APP_PATH }}/.env" "${{ env.VPS_APP_PATH }}/auto_body/.env"; fi
 
       - name: Write prod .env on VPS (if provided)
         uses: appleboy/ssh-action@v1.2.0
-        env:
-          PROD_ENV: ${{ secrets.PROD_ENV != '' && secrets.PROD_ENV || vars.PROD_ENV }}
-          APP_PATH: ${{ secrets.VPS_APP_PATH != '' && secrets.VPS_APP_PATH || vars.VPS_APP_PATH }}
         with:
-          host: ${{ secrets.VPS_HOST != '' && secrets.VPS_HOST || vars.VPS_HOST }}
-          username: ${{ secrets.VPS_USER != '' && secrets.VPS_USER || vars.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY != '' && secrets.VPS_SSH_KEY || vars.VPS_SSH_KEY }}
+          host: ${{ env.VPS_HOST }}
+          username: ${{ env.VPS_USER }}
+          key: ${{ env.VPS_SSH_KEY }}
           script_stop: true
           script: |
             set -euo pipefail
             # Create data directories with or without sudo (Hostinger may not allow sudo)
             mkdir -p /opt/rag-data /opt/rag-chroma || sudo mkdir -p /opt/rag-data /opt/rag-chroma || true
             chown -R $(whoami):$(whoami) /opt/rag-data /opt/rag-chroma || sudo chown -R $(whoami):$(whoami) /opt/rag-data /opt/rag-chroma || true
-            mkdir -p "$APP_PATH"
-            if [ -n "${PROD_ENV}" ]; then echo "$PROD_ENV" | base64 -d > "$APP_PATH/.env"; fi
+            mkdir -p "${{ env.VPS_APP_PATH }}"
+            if [ -n "${{ env.PROD_ENV }}" ]; then echo "${{ env.PROD_ENV }}" | base64 -d > "${{ env.VPS_APP_PATH }}/.env"; fi
 
       - name: Log in to GHCR on VPS (required if image is private)
         uses: appleboy/ssh-action@v1.2.0
@@ -139,9 +133,9 @@ jobs:
           GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
           GHCR_PAT: ${{ secrets.GHCR_PAT }}
         with:
-          host: ${{ secrets.VPS_HOST != '' && secrets.VPS_HOST || vars.VPS_HOST }}
-          username: ${{ secrets.VPS_USER != '' && secrets.VPS_USER || vars.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY != '' && secrets.VPS_SSH_KEY || vars.VPS_SSH_KEY }}
+          host: ${{ env.VPS_HOST }}
+          username: ${{ env.VPS_USER }}
+          key: ${{ env.VPS_SSH_KEY }}
           script_stop: false
           script: |
             set -euo pipefail
@@ -154,16 +148,15 @@ jobs:
       - name: Deploy via docker compose
         uses: appleboy/ssh-action@v1.2.0
         env:
-          APP_PATH: ${{ secrets.VPS_APP_PATH != '' && secrets.VPS_APP_PATH || vars.VPS_APP_PATH }}
           IMAGE: ghcr.io/reachmagnets-hue/crm-backend:latest
         with:
-          host: ${{ secrets.VPS_HOST != '' && secrets.VPS_HOST || vars.VPS_HOST }}
-          username: ${{ secrets.VPS_USER != '' && secrets.VPS_USER || vars.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY != '' && secrets.VPS_SSH_KEY || vars.VPS_SSH_KEY }}
+          host: ${{ env.VPS_HOST }}
+          username: ${{ env.VPS_USER }}
+          key: ${{ env.VPS_SSH_KEY }}
           script_stop: true
           script: |
             set -euo pipefail
-            cd "$APP_PATH"
+            cd "${{ env.VPS_APP_PATH }}"
             if docker compose version >/dev/null 2>&1; then DC="docker compose"; \
             elif command -v docker-compose >/dev/null 2>&1; then DC="docker-compose"; \
             else echo "docker compose not installed" >&2; exit 1; fi
@@ -175,12 +168,10 @@ jobs:
 
       - name: Smoke test health endpoint
         uses: appleboy/ssh-action@v1.2.0
-        env:
-          APP_PATH: ${{ secrets.VPS_APP_PATH != '' && secrets.VPS_APP_PATH || vars.VPS_APP_PATH }}
         with:
-          host: ${{ secrets.VPS_HOST != '' && secrets.VPS_HOST || vars.VPS_HOST }}
-          username: ${{ secrets.VPS_USER != '' && secrets.VPS_USER || vars.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY != '' && secrets.VPS_SSH_KEY || vars.VPS_SSH_KEY }}
+          host: ${{ env.VPS_HOST }}
+          username: ${{ env.VPS_USER }}
+          key: ${{ env.VPS_SSH_KEY }}
           script_stop: true
           script: |
             set -euo pipefail
@@ -192,7 +183,7 @@ jobs:
               echo "Waiting for service... ($i)"; sleep 3;
             done
             echo "Health check failed, showing diagnostics" >&2
-            cd "$APP_PATH"
+            cd "${{ env.VPS_APP_PATH }}"
             if docker compose version >/dev/null 2>&1; then DC="docker compose"; \
             elif command -v docker-compose >/dev/null 2>&1; then DC="docker-compose"; \
             else DC="echo 'no docker compose'"; fi
