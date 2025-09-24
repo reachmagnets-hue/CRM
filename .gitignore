@@ -30,6 +30,9 @@ monorepo/backend/data/audio/
 monorepo/backend/data/docs/
 monorepo/backend/data/tenants/*
 
+# Runtime fallback data
+data_fallback/
+
 # Node
 node_modules/
 monorepo/wp-plugins/**/node_modules/

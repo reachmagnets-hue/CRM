@@ -36,13 +36,30 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-# Ensure data directories exist
+# Ensure data directories exist and mount static if possible
 DATA_DIR = Path(SETTINGS.data_dir)
-(DATA_DIR / "audio").mkdir(parents=True, exist_ok=True)
-(DATA_DIR / "docs").mkdir(parents=True, exist_ok=True)
+_mounted_audio = False
+try:
+    (DATA_DIR / "audio").mkdir(parents=True, exist_ok=True)
+    (DATA_DIR / "docs").mkdir(parents=True, exist_ok=True)
+except Exception:
+    # Fallback to a local relative path when running outside Docker or without permissions
+    DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data"
+    try:
+        (DATA_DIR / "audio").mkdir(parents=True, exist_ok=True)
+        (DATA_DIR / "docs").mkdir(parents=True, exist_ok=True)
+    except Exception:
+        # Final fallback
+        DATA_DIR = Path("./data_fallback").resolve()
+        (DATA_DIR / "audio").mkdir(parents=True, exist_ok=True)
+        (DATA_DIR / "docs").mkdir(parents=True, exist_ok=True)
 
-# Serve TTS audio files in dev (prod should be via nginx)
-app.mount("/static/audio", StaticFiles(directory=str(DATA_DIR / "audio")), name="audio")
+# Try to mount static audio; ignore on failure (prod serves via nginx)
+try:
+    app.mount("/static/audio", StaticFiles(directory=str(DATA_DIR / "audio")), name="audio")
+    _mounted_audio = True
+except Exception:
+    _mounted_audio = False
 
 # Tenant context middleware (per-request)
 @app.middleware("http")

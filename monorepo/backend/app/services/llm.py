@@ -38,3 +38,22 @@ def _messages_to_prompt(messages: List[Dict]) -> str:
         content = m.get("content", "")
         lines.append(f"<{role.upper()}> {content}")
     return "\n".join(lines)
+
+
+async def generate(messages: List[Dict], model: str | None = None) -> str:
+    """Non-streaming generate: returns the full response text.
+
+    Uses Ollama's /api/generate with stream=false.
+    """
+    url = f"{SETTINGS.ollama_base}/api/generate"
+    payload = {
+        "model": model or SETTINGS.ollama_model,
+        "prompt": _messages_to_prompt(messages),
+        "stream": False,
+    }
+    async with httpx.AsyncClient(timeout=None) as client:
+        r = await client.post(url, json=payload)
+        r.raise_for_status()
+        data = r.json()
+        # Ollama returns { response: str, done: bool, ... }
+        return data.get("response", "")

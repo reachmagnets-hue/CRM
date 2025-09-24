@@ -62,10 +62,18 @@
       const headers = { 'Content-Type': 'application/json' }; if (cfg.public_key) headers['X-Public-Key'] = cfg.public_key; if (cfg.tenant_override && tenantAttr !== 'auto') headers['X-Tenant-Id'] = cfg.tenant_override;
       const payload = { message: message, top_k: 5 };
       if (!cfg.tenant_override && tenantAttr !== 'auto') { payload.tenant = tenantAttr; }
-      const res = await fetch(api.replace(/\/$/, '') + '/api/v1/chat/stream', { method: 'POST', headers, body: JSON.stringify(payload) });
-      if (!res.ok) { addMsg('sys', 'Error: ' + res.status); return; }
-      const reader = res.body.getReader(); const dec = new TextDecoder(); addMsg('assistant', ''); const last = body.lastChild;
-      while (true) { const { done, value } = await reader.read(); if (done) break; last.textContent += dec.decode(value, { stream: true }); body.scrollTop = body.scrollHeight; }
+      const mode = (cfg.mode || 'stream');
+      if (mode === 'json') {
+        const res = await fetch(api.replace(/\/$/, '') + '/api/v1/chat', { method: 'POST', headers, body: JSON.stringify(payload) });
+        if (!res.ok) { addMsg('sys', 'Error: ' + res.status); return; }
+        const data = await res.json();
+        addMsg('assistant', data && data.answer ? String(data.answer) : '(no answer)');
+      } else {
+        const res = await fetch(api.replace(/\/$/, '') + '/api/v1/chat/stream', { method: 'POST', headers, body: JSON.stringify(payload) });
+        if (!res.ok) { addMsg('sys', 'Error: ' + res.status); return; }
+        const reader = res.body.getReader(); const dec = new TextDecoder(); addMsg('assistant', ''); const last = body.lastChild;
+        while (true) { const { done, value } = await reader.read(); if (done) break; last.textContent += dec.decode(value, { stream: true }); body.scrollTop = body.scrollHeight; }
+      }
     }
     form.addEventListener('submit', function (e) { e.preventDefault(); const q = input.value.trim(); if (!q) return; addMsg('user', q); input.value = ''; chat(q); });
 

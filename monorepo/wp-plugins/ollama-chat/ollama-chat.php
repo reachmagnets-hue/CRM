@@ -32,7 +32,8 @@ class Ollama_Chat_Plugin {
         'api_base' => '',
         'public_key' => '',
   'tenant_override' => '',
-  'auto_inject' => '0'
+  'auto_inject' => '0',
+  'mode' => 'stream'
       ],
     ]);
     add_settings_section('ollama_chat_main', 'Main Settings', function() {
@@ -42,6 +43,7 @@ class Ollama_Chat_Plugin {
     add_settings_field('public_key', 'Public Client Key', [$this, 'field_public_key'], 'ollama-chat', 'ollama_chat_main');
     add_settings_field('tenant_override', 'Tenant Override (optional)', [$this, 'field_tenant_override'], 'ollama-chat', 'ollama_chat_main');
   add_settings_field('auto_inject', 'Show widget on all pages', [$this, 'field_auto_inject'], 'ollama-chat', 'ollama_chat_main');
+  add_settings_field('mode', 'Response mode', [$this, 'field_mode'], 'ollama-chat', 'ollama_chat_main');
   }
 
   public function sanitize_options($opts) {
@@ -50,6 +52,8 @@ class Ollama_Chat_Plugin {
     $clean['public_key'] = sanitize_text_field($opts['public_key'] ?? '');
     $clean['tenant_override'] = sanitize_text_field($opts['tenant_override'] ?? '');
   $clean['auto_inject'] = isset($opts['auto_inject']) && $opts['auto_inject'] ? '1' : '0';
+  $mode = isset($opts['mode']) ? sanitize_text_field($opts['mode']) : 'stream';
+  $clean['mode'] = in_array($mode, ['stream','json'], true) ? $mode : 'stream';
     return $clean;
   }
 
@@ -71,6 +75,15 @@ class Ollama_Chat_Plugin {
     printf('<label><input type="checkbox" name="%s[auto_inject]" value="1" %s /> Enable floating widget on all pages</label>', self::OPTION_NAME, $checked);
   }
 
+  public function field_mode() {
+    $opts = get_option(self::OPTION_NAME);
+    $mode = $opts['mode'] ?? 'stream';
+    echo '<label><select name="' . esc_attr(self::OPTION_NAME) . '[mode]">';
+    echo '<option value="stream"' . selected($mode, 'stream', false) . '>Streaming (SSE-like)</option>';
+    echo '<option value="json"' . selected($mode, 'json', false) . '>JSON (classic REST)</option>';
+    echo '</select></label>';
+  }
+
   public function render_settings_page() {
     if (!current_user_can('manage_options')) { return; }
     echo '<div class="wrap"><h1>Ollama Chat Settings</h1><form method="post" action="options.php">';
@@ -88,6 +101,7 @@ class Ollama_Chat_Plugin {
       'api_base' => $opts['api_base'] ?? '',
       'public_key' => $opts['public_key'] ?? '',
       'tenant_override' => $opts['tenant_override'] ?? '',
+  'mode' => $opts['mode'] ?? 'stream',
     ]);
   }
 

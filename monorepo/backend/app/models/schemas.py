@@ -33,6 +33,15 @@ class ChatRequest(BaseModel):
     tenant: Optional[str] = None
     customer_id: Optional[str] = None
 
+class ChatCitation(BaseModel):
+    source: str
+    page: int | None = None
+    score: float | None = None
+
+class ChatResponse(BaseModel):
+    answer: str
+    citations: List[ChatCitation] = Field(default_factory=list)
+
 
 class IngestResponse(BaseModel):
     ok: bool
