@@ -1,4 +1,3 @@
-version: '3.8'
 name: rag
 services:
   backend:
@@ -22,6 +21,7 @@ services:
         condition: service_healthy
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - /opt/rag-data/audio:/var/www/audio:ro
