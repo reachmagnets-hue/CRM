@@ -32,6 +32,8 @@
 ## API for ReachMagnets
 api.reachmagnets.com {
     encode gzip zstd
+    # Temporary: use internal CA while Let's Encrypt is rate-limited
+    tls internal
     route {
         # Return 200 for HEAD health checks without proxying
         @health_head {
