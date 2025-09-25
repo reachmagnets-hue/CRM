@@ -2,6 +2,15 @@
 :80 {
     encode zstd gzip
 
+    # Return 200 for HEAD health checks without proxying
+    @health_head {
+        method HEAD
+        path /health /api/v1/health
+    }
+    handle @health_head {
+        respond 200
+    }
+
     @audio path /static/audio/*
     handle @audio {
         root * /var/www/audio
@@ -20,5 +29,13 @@
 # API for ReachMagnets
 api.reachmagnets.com {
     encode gzip zstd
+    # Return 200 for HEAD health checks without proxying
+    @health_head {
+        method HEAD
+        path /health /api/v1/health
+    }
+    handle @health_head {
+        respond 200
+    }
     reverse_proxy backend:8000
 }
