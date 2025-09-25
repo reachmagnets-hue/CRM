@@ -1,37 +1,41 @@
-# Default HTTP listener (works without a domain; good for VPS behind Hostinger)
+## Default HTTP listener (works without a domain; good for VPS behind Hostinger)
 :80 {
     encode zstd gzip
+    route {
+        # Return 200 for HEAD health checks without proxying
+        @health_head {
+            method HEAD
+            path /health /api/v1/health
+        }
+        respond @health_head 200
 
-    # Return 200 for HEAD health checks without proxying
-    @health_head {
-        method HEAD
-        path /health /api/v1/health
-    }
-    respond @health_head 200
+        # Static audio
+        @audio path /static/audio/*
+        handle @audio {
+            root * /var/www/audio
+            file_server
+            header Access-Control-Allow-Origin "*"
+        }
 
-    @audio path /static/audio/*
-    handle @audio {
-        root * /var/www/audio
-        file_server      # serves static files (no 'off')
-        header Access-Control-Allow-Origin "*"
-    }
-
-    # Proxy everything else to FastAPI backend
-    reverse_proxy backend:8000 {
-        header_up Host {host}
-        header_up X-Forwarded-For {remote}
-        header_up X-Forwarded-Proto {scheme}
+        # Proxy everything else to FastAPI backend
+        reverse_proxy backend:8000 {
+            header_up Host {host}
+            header_up X-Forwarded-For {remote}
+            header_up X-Forwarded-Proto {scheme}
+        }
     }
 }
 
-# API for ReachMagnets
+## API for ReachMagnets
 api.reachmagnets.com {
     encode gzip zstd
-    # Return 200 for HEAD health checks without proxying
-    @health_head {
-        method HEAD
-        path /health /api/v1/health
+    route {
+        # Return 200 for HEAD health checks without proxying
+        @health_head {
+            method HEAD
+            path /health /api/v1/health
+        }
+        respond @health_head 200
+        reverse_proxy backend:8000
     }
-    respond @health_head 200
-    reverse_proxy backend:8000
 }
