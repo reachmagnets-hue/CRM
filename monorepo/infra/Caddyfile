@@ -7,9 +7,7 @@
         method HEAD
         path /health /api/v1/health
     }
-    handle @health_head {
-        respond 200
-    }
+    respond @health_head 200
 
     @audio path /static/audio/*
     handle @audio {
@@ -34,8 +32,6 @@ api.reachmagnets.com {
         method HEAD
         path /health /api/v1/health
     }
-    handle @health_head {
-        respond 200
-    }
+    respond @health_head 200
     reverse_proxy backend:8000
 }
