@@ -1,26 +1,22 @@
-# Update this to your domain to enable automatic HTTPS
-# example.com {
-#   import common
-# }
-
 # Default HTTP listener (works without a domain; good for VPS behind Hostinger)
 :80 {
-  encode zstd gzip
+    encode zstd gzip
 
-  @audio path /static/audio/*
-  handle @audio {
-    root * /var/www/audio
-    file_server browse off
-    header Access-Control-Allow-Origin "*"
-  }
+    @audio path /static/audio/*
+    handle @audio {
+        root * /var/www/audio
+        file_server      # serves static files (no 'off')
+        header Access-Control-Allow-Origin "*"
+    }
 
-  # Proxy everything else to FastAPI backend
-  reverse_proxy backend:8000 {
-    header_up Host {host}
-    header_up X-Forwarded-For {remote}
-    header_up X-Forwarded-Proto {scheme}
-  }
+    # Proxy everything else to FastAPI backend
+    reverse_proxy backend:8000 {
+        header_up Host {host}
+        header_up X-Forwarded-For {remote}
+        header_up X-Forwarded-Proto {scheme}
+    }
 }
+
 # API for ReachMagnets
 api.reachmagnets.com {
     encode gzip zstd
